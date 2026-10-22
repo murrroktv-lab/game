@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ky">
+<head>
+    <meta charset="UTF-8">
+    <title>Необычный Сыйкырдуу Шар Оюну</title>
+    <style>
+        body {
+            margin: 0;
+            background: #0d0d1a;
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        canvas {
+            border: 2px dashed #ff00ff;
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
+            background: #121225;
+            cursor: none;
+        }
+        .info {
+            margin-bottom: 10px;
+            font-size: 18px;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="info">🔮 Упай: <span id="score">0</span> | Кызыл түстүү дубалдардан качыңыз!</div>
+    <canvas id="neonCanvas" width="600" height="400"></canvas>
+
+    <script>
+        const canvas = document.getElementById("neonCanvas");
+        const ctx = canvas.getContext("2d");
+
+        let score = 0;
+        let isGameOver = false;
+
+        // Оюнчу (Сиздин шар)
+        let player = {
+            x: 300,
+            y: 200,
+            radius: 12,
+            color: "#00ffff"
+        };
+
+        // Жылып жүргөн дубалдар / тоскоолдуктар
+        let obstacles = [
+            { x: 100, y: 50, w: 20, h: 150, dx: 2, dy: 1 },
+            { x: 400, y: 200, w: 150, h: 20, dx: -1.5, dy: -2 },
+            { x: 250, y: 300, w: 100, h: 20, dx: 2, dy: 0 }
+        ];
+
+        // Сыйкырдуу максат (Жылдызча)
+        let target = {
+            x: Math.random() * 500 + 50,
+            y: Math.random() * 300 + 50,
+            radius: 8,
+            color: "#ff00ff"
+        };
+
+        // Чычкандын кыймылы менен оюнчуну башкаруу
+        window.addEventListener("mousemove", (e) => {
+            const rect = canvas.getBoundingClientRect();
+            player.x = e.clientX - rect.left;
+            player.y = e.clientY - rect.top;
+        });
+
+        function update() {
+            if (isGameOver) return;
+
+            // Тоскоолдуктардын кыймылы
+            obstacles.forEach(obs => {
+                obs.x += obs.dx;
+                obs.y += obs.dy;
+
+                // Четтеринен кайрылып калуу
+                if (obs.x < 0 || obs.x + obs.w > canvas.width) obs.dx *= -1;
+                if (obs.y < 0 || obs.y + obs.h > canvas.height) obs.dy *= -1;
+
+                // Кагылышууну текшерүү (Collision detection)
+                if (
+                    player.x + player.radius > obs.x &&
+                    player.x - player.radius < obs.x + obs.w &&
+                    player.y + player.radius > obs.y &&
+                    player.y - player.radius < obs.y + obs.h
+                ) {
+                    isGameOver = true;
+                }
+            });
+
+            // Максатты алуу (Жылдызчага тийүү)
+            let dist = Math.hypot(player.x - target.x, player.y - target.y);
+            if (dist < player.radius + target.radius) {
+                score += 10;
+                document.getElementById("score").innerText = score;
+                // Жаңы жерге чыгаруу
+                target.x = Math.random() * 540 + 30;
+                target.y = Math.random() * 340 + 30;
+                
+                // Оюн татаалдашат
+                obstacles.push({
+                    x: Math.random() * 400,
+                    y: Math.random() * 300,
+                    w: Math.random() * 40 + 10,
+                    h: Math.random() * 40 + 10,
+                    dx: (Math.random() - 0.5) * 4,
+                    dy: (Math.random() - 0.5) * 4
+                });
+            }
+        }
+
+        function draw() {
+            // Фонду тазалоо
+            ctx.fillStyle = "rgba(18, 18, 37, 0.3)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (isGameOver) {
+                ctx.fillStyle = "#ff3333";
+                ctx.font = "30px 'Courier New'";
+                ctx.textAlign = "center";
+                ctx.fillText("ОЮН БҮТТҮ!", canvas.width / 2, canvas.height / 2 - 10);
+                ctx.font = "16px 'Courier New'";
+                ctx.fillStyle = "#fff";
+                ctx.fillText("Кайра баштоо үчүн баракты жаңыртыңыз (F5)", canvas.width / 2, canvas.height / 2 + 30);
+                return;
+            }
+
+            // Дубалдарды тартуу
+            ctx.fillStyle = "#ff2266";
+            obstacles.forEach(obs => {
+                ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+            });
+
+            // Максатты тартуу
+            ctx.beginPath();
+            ctx.arc(target.x, target.y, target.radius, 0, Math.PI * 2);
+            ctx.fillStyle = target.color;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = "#ff00ff";
+            ctx.fill();
+            ctx.closePath();
+
+            // Оюнчуну тартуу (көк шар)
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+            ctx.fillStyle = player.color;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = "#00ffff";
+            ctx.fill();
+            ctx.closePath();
+            ctx.shadowBlur = 0; // Шамдагайлык үчүн тазалоо
+        }
+
+        function loop() {
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        loop();
+    </script>
+</body>
+</html>
